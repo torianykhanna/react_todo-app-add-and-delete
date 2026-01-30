@@ -17,6 +17,8 @@ export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [newTitle, setNewTitle] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [tempTodo, setTempTodo] = useState<Todo | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<FilterState>(
     FilterState.All,
   );
@@ -62,15 +64,32 @@ export const App: React.FC = () => {
       return;
     }
 
-    setErrorMessage(''); // hide before request
+    setErrorMessage('');
+    setIsAdding(true);
+
+    const newTempTodo: Todo = {
+      id: 0,
+      title: trimmedTitle,
+      completed: false,
+      userId: todoService.USER_ID,
+    };
+
+    setTempTodo(newTempTodo);
 
     todoService
       .addTodo(trimmedTitle)
       .then(newTodo => {
         setTodos(prev => [...prev, newTodo]);
         setNewTitle('');
+        setTempTodo(null);
       })
-      .catch(() => showError('Unable to add a todo'));
+      .catch(() => {
+        showError('Unable to add a todo');
+        setTempTodo(null);
+      })
+      .finally(() => {
+        setIsAdding(false);
+      });
   }
 
   const filteredTodos = filterTodos(selectedFilter, todos);
@@ -103,6 +122,7 @@ export const App: React.FC = () => {
               value={newTitle}
               onChange={event => setNewTitle(event.target.value)}
               autoFocus
+              disabled={isAdding}
             />
           </form>
         </header>
@@ -112,6 +132,8 @@ export const App: React.FC = () => {
             {filteredTodos.map(todo => (
               <TodoItem key={todo.id} todo={todo} />
             ))}
+
+            {tempTodo && <TodoItem todo={tempTodo} />}
           </section>
         )}
 
