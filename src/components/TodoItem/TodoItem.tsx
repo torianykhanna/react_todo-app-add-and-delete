@@ -6,9 +6,13 @@ import classNames from 'classnames';
 
 type Props = {
   todo: Todo;
+  isLoading?: boolean;
 };
 
-export const TodoItem: React.FC<Props> = ({ todo: { completed, title } }) => {
+export const TodoItem: React.FC<Props> = ({
+  todo: { completed, title },
+  isLoading = false,
+}) => {
   return (
     <div
       data-cy="Todo"
@@ -33,7 +37,12 @@ export const TodoItem: React.FC<Props> = ({ todo: { completed, title } }) => {
       </button>
 
       {/* overlay will cover the todo while it is being deleted or updated */}
-      <div data-cy="TodoLoader" className="modal overlay">
+      <div
+        data-cy="TodoLoader"
+        className={classNames('modal overlay', {
+          'is-active': isLoading,
+        })}
+      >
         <div className="modal-background has-background-white-ter" />
         <div className="loader" />
       </div>

@@ -133,7 +133,7 @@ export const App: React.FC = () => {
               <TodoItem key={todo.id} todo={todo} />
             ))}
 
-            {tempTodo && <TodoItem todo={tempTodo} />}
+            {tempTodo && <TodoItem todo={tempTodo} isLoading />}
           </section>
         )}
 
