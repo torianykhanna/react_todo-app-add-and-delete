@@ -7,11 +7,13 @@ import classNames from 'classnames';
 type Props = {
   todo: Todo;
   isLoading?: boolean;
+  onDelete?: () => void;
 };
 
 export const TodoItem: React.FC<Props> = ({
   todo: { completed, title },
   isLoading = false,
+  onDelete,
 }) => {
   return (
     <div
@@ -32,7 +34,13 @@ export const TodoItem: React.FC<Props> = ({
       </span>
 
       {/* Remove button appears only on hover */}
-      <button type="button" className="todo__remove" data-cy="TodoDelete">
+      <button
+        type="button"
+        className="todo__remove"
+        data-cy="TodoDelete"
+        onClick={onDelete}
+        disabled={isLoading}
+      >
         ×
       </button>
 

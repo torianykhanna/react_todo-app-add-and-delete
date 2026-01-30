@@ -20,6 +20,8 @@ export const App: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
   const newTodoFieldRef = useRef<HTMLInputElement>(null);
+  const [deletingTodoId, setDeletingTodoId] = useState<number | null>(null);
+  const [isClearingCompleted, setIsClearingCompleted] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<FilterState>(
     FilterState.All,
   );
@@ -40,6 +42,12 @@ export const App: React.FC = () => {
       .then(setTodos)
       .catch(() => showError('Unable to load todos'));
   }, []);
+
+  useEffect(() => {
+    if (!isAdding && deletingTodoId === null && !isClearingCompleted) {
+      newTodoFieldRef.current?.focus();
+    }
+  }, [isAdding, deletingTodoId, isClearingCompleted]);
 
   function handleHideError() {
     setErrorMessage('');
@@ -90,9 +98,58 @@ export const App: React.FC = () => {
       })
       .finally(() => {
         setIsAdding(false);
-
-        newTodoFieldRef.current?.focus();
       });
+  }
+
+  function handleDeleteTodo(todoId: number) {
+    setErrorMessage('');
+    setDeletingTodoId(todoId);
+
+    todoService
+      .deleteTodo(todoId)
+      .then(() => {
+        setTodos(prev => prev.filter(todo => todo.id !== todoId));
+      })
+      .catch(() => {
+        showError('Unable to delete a todo');
+      })
+      .finally(() => {
+        setDeletingTodoId(null);
+      });
+  }
+
+  function handleClearCompleted() {
+    setErrorMessage('');
+    setIsClearingCompleted(true);
+
+    const completedTodos = todos.filter(todo => todo.completed);
+
+    const requests = completedTodos.map(todo =>
+      todoService.deleteTodo(todo.id),
+    );
+
+    Promise.allSettled(requests).then(results => {
+      const hasError = results.some(r => r.status === 'rejected');
+
+      setTodos(prev =>
+        prev.filter(
+          todo =>
+            !completedTodos.some(
+              completedTodo =>
+                completedTodo.id === todo.id &&
+                results[
+                  completedTodos.findIndex(t => t.id === completedTodo.id)
+                ].status === 'fulfilled',
+            ),
+        ),
+      );
+
+      if (hasError) {
+        showError('Unable to delete a todo');
+      }
+
+      setIsClearingCompleted(false); // 👈 КЛЮЧОВО
+    });
   }
 
   const filteredTodos = filterTodos(selectedFilter, todos);
@@ -101,6 +158,8 @@ export const App: React.FC = () => {
     () => todos.filter(todo => !todo.completed).length,
     [todos],
   );
+
+  const hasCompletedTodos = todos.some(todo => todo.completed);
 
   return (
     <div className="todoapp">
@@ -134,7 +193,12 @@ export const App: React.FC = () => {
         {todos.length > 0 && (
           <section className="todoapp__main" data-cy="TodoList">
             {filteredTodos.map(todo => (
-              <TodoItem key={todo.id} todo={todo} />
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                isLoading={deletingTodoId === todo.id}
+                onDelete={() => handleDeleteTodo(todo.id)}
+              />
             ))}
 
             {tempTodo && <TodoItem todo={tempTodo} isLoading />}
@@ -189,6 +253,8 @@ export const App: React.FC = () => {
               type="button"
               className="todoapp__clear-completed"
               data-cy="ClearCompletedButton"
+              disabled={!hasCompletedTodos}
+              onClick={handleClearCompleted}
             >
               Clear completed
             </button>
@@ -214,13 +280,6 @@ export const App: React.FC = () => {
         {errorMessage}
         {/* show only one message at a time */}
         {/*
-        <br />
-        Title should not be empty
-        <br />
-        Unable to add a todo
-        <br />
-        Unable to delete a todo
-        <br />
         Unable to update a todo */}
       </div>
     </div>
