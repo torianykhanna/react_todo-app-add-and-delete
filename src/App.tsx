@@ -54,18 +54,20 @@ export const App: React.FC = () => {
   function handleAddTodo(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (newTitle.trim() === '') {
+    const trimmedTitle = newTitle.trim();
+
+    if (trimmedTitle === '') {
       showError('Title should not be empty');
 
       return;
     }
 
-    setErrorMessage('');
+    setErrorMessage(''); // hide before request
 
     todoService
-      .addTodo(newTitle.trim())
+      .addTodo(trimmedTitle)
       .then(newTodo => {
-        setTodos(currentTodos => [...currentTodos, newTodo]);
+        setTodos(prev => [...prev, newTodo]);
         setNewTitle('');
       })
       .catch(() => showError('Unable to add a todo'));
