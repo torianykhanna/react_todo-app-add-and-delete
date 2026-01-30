@@ -19,6 +19,7 @@ export const App: React.FC = () => {
   const [newTitle, setNewTitle] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
+  const newTodoFieldRef = useRef<HTMLInputElement>(null);
   const [selectedFilter, setSelectedFilter] = useState<FilterState>(
     FilterState.All,
   );
@@ -89,6 +90,8 @@ export const App: React.FC = () => {
       })
       .finally(() => {
         setIsAdding(false);
+
+        newTodoFieldRef.current?.focus();
       });
   }
 
@@ -115,6 +118,7 @@ export const App: React.FC = () => {
           {/* Add a todo on form submit */}
           <form onSubmit={handleAddTodo}>
             <input
+              ref={newTodoFieldRef}
               data-cy="NewTodoField"
               type="text"
               className="todoapp__new-todo"
