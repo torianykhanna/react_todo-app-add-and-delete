@@ -16,6 +16,7 @@ export enum FilterState {
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [newTitle, setNewTitle] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<FilterState>(
     FilterState.All,
   );
@@ -50,6 +51,26 @@ export const App: React.FC = () => {
     setSelectedFilter(newFilterState);
   }
 
+  function handleAddTodo(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (newTitle.trim() === '') {
+      showError('Title should not be empty');
+
+      return;
+    }
+
+    setErrorMessage('');
+
+    todoService
+      .addTodo(newTitle.trim())
+      .then(newTodo => {
+        setTodos(currentTodos => [...currentTodos, newTodo]);
+        setNewTitle('');
+      })
+      .catch(() => showError('Unable to add a todo'));
+  }
+
   const filteredTodos = filterTodos(selectedFilter, todos);
 
   const notConpletedCount = useMemo(
@@ -71,12 +92,15 @@ export const App: React.FC = () => {
           />
 
           {/* Add a todo on form submit */}
-          <form>
+          <form onSubmit={handleAddTodo}>
             <input
               data-cy="NewTodoField"
               type="text"
               className="todoapp__new-todo"
               placeholder="What needs to be done?"
+              value={newTitle}
+              onChange={event => setNewTitle(event.target.value)}
+              autoFocus
             />
           </form>
         </header>
